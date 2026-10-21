@@ -1,4 +1,3 @@
-
 (() => {
   const $ = (id) => document.getElementById(id);
 
@@ -21,6 +20,7 @@
 
   function toast(message) {
     const el = $('toast');
+    if (!el) return;
     el.textContent = message;
     el.classList.add('show');
     clearTimeout(toastTimer);
@@ -62,9 +62,7 @@
     s = s.split(/\n{2,}/).map(block => {
       const t = block.trim();
       if (!t) return '';
-
       if (/^<(h[1-3]|ul|ol|pre)>/.test(t)) return t;
-
       return '<p>' + t.replace(/\n/g, '<br>') + '</p>';
     }).join('');
 
@@ -73,8 +71,7 @@
 
   function renderMessage(role, content) {
     const wrap = document.createElement('article');
-    wrap.className = 'message ' +
-      (role === 'user' ? 'user' : 'assistant');
+    wrap.className = 'message ' + (role === 'user' ? 'user' : 'assistant');
 
     const avatar = document.createElement('div');
     avatar.className = 'avatar';
@@ -112,6 +109,7 @@
 
     welcome.classList.toggle('hidden', hasMessages);
     conversation.classList.toggle('hidden', !hasMessages);
+    reportButton.classList.toggle('hidden', !hasMessages);
 
     saveBtn.disabled = !hasMessages || state.busy;
 
@@ -133,7 +131,6 @@
 
   async function sendMessage(text) {
     const value = text.trim();
-
     if (!value || state.busy) return;
 
     state.messages.push({ role: 'user', content: value });
@@ -144,7 +141,6 @@
     setBusy(true);
 
     try {
-      // Connect to the deployed Render backend.
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
@@ -179,9 +175,7 @@
           (error.message || 'Please check the backend and try again.')
       });
 
-      toast(
-        'Could not contact the backend. Check your connection and server logs.'
-      );
+      toast('Could not contact the backend. Check your connection and server logs.');
     } finally {
       setBusy(false);
       renderAll();
@@ -205,7 +199,7 @@
     resizeInput();
     input.focus();
 
-    $('sidebar').classList.remove('open');
+    $('sidebar')?.classList.remove('open');
     toast('New private session started.');
   }
 
@@ -214,7 +208,6 @@
       const value = JSON.parse(
         localStorage.getItem(STORAGE_KEY) || '[]'
       );
-
       return Array.isArray(value) ? value : [];
     } catch {
       return [];
@@ -290,7 +283,7 @@
     }));
 
     renderAll();
-    $('savedPanel').classList.add('hidden');
+    $('savedPanel')?.classList.add('hidden');
     toast('Saved conversation opened.');
   }
 
@@ -355,14 +348,13 @@
     input.value = '';
     resizeInput();
 
-    $('sidebar').classList.remove('open');
+    $('sidebar')?.classList.remove('open');
     toast('Current session forgotten. Deliberately saved chats remain.');
   });
 
   $('saveChatBtn').addEventListener('click', saveCurrentChat);
 
-  $('savedToggle').addEventListener('click', () =>
-    $('savedPanel').classList.toggle('hidden')
+  $('savedToggle').addEventListener('click', () =>$('savedPanel')?.classList.toggle('hidden')
   );
 
   $('deleteAllSaved').addEventListener('click', () => {
@@ -377,12 +369,10 @@
     }
   });
 
-  $('mobileMenu').addEventListener('click', () =>
-    $('sidebar').classList.toggle('open')
+  $('mobileMenu').addEventListener('click', () =>$('sidebar')?.classList.toggle('open')
   );
 
-  $('currentChatLink').addEventListener('click', () => {
-    $('sidebar').classList.remove('open');
+  $('currentChatLink').addEventListener('click', () => {$('sidebar')?.classList.remove('open');
 
     if (!state.messages.length) {
       welcome.scrollIntoView({ behavior: 'smooth' });
@@ -453,15 +443,6 @@
 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-
-  const observer = new MutationObserver(() => {
-    reportButton.classList.toggle(
-      'hidden',
-      state.messages.length === 0
-    );
-  });
-
-  observer.observe(messagesEl, { childList: true });
 
   state.saved = readSaved();
   renderSaved();
