@@ -270,5 +270,8 @@
   saveDialog.addEventListener('click', e => { if (e.target === saveDialog) saveDialog.close(); });
   saveDialog.addEventListener('close', () => { $('chatTitle').value = ''; });
 
+  // Wake the (free-tier) backend early so the first reply is not slow. Fire-and-forget.
+  try { fetch(API_URL.replace(/\/api\/chat$/, '/health'), { mode: 'no-cors', cache: 'no-store' }).catch(() => {}); } catch { /* ignore */ }
+
   state.saved = readSaved(); renderSaved(); renderAll();
 })();
