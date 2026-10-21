@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # ClearChoice AI (Python + HTML + CSS + JavaScript)
 
 A real conversational decision assistant. The browser sends messages to a Flask backend, and the backend calls the Groq API. The API key is read by Python from a private `.env` file; it is never placed in HTML or JavaScript.
