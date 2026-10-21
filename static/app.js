@@ -2,7 +2,8 @@
   const $ = (id) => document.getElementById(id);
   const state = { messages: [], busy: false, saved: [] };
   const STORAGE_KEY = 'clearchoice_explicitly_saved_chats_v1';
-  const BACKEND_URL = 'https://clearchoice-chatbot.onrender.com/api/chat';
+ const BACKEND_URL =
+  'https://clearchoice-chatbot.onrender.com/api/chat';
 
   const welcome = $('welcome'), conversation = $('conversation'), messagesEl =$('messages');
   const input = $('messageInput'), form = $('chatForm'), sendBtn =$('sendBtn');
