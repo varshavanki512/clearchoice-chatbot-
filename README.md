@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ClearChoice AI (Python + HTML + CSS + JavaScript)
 
 A real conversational decision assistant. The browser sends messages to a Flask backend, and the backend calls the Groq API. The API key is read by Python from a private `.env` file; it is never placed in HTML or JavaScript.
@@ -74,3 +75,6 @@ GitHub Pages alone cannot run Python/Flask. For a simple all-in-one deployment, 
 - **AI backend not configured:** `.env` must be in the project root beside `app.py`, and Python must be restarted after editing it.
 - **API request failed:** check API key validity, provider account billing, and model access.
 - **Port already in use:** change `PORT` in `.env`, then visit that port in your browser.
+=======
+# clearchoice-chatbot-
+>>>>>>> ee9e076b49eb3866cc838e3394e0819bafeda0c3
