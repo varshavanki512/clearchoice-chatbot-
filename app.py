@@ -52,7 +52,7 @@ MAX_MESSAGES = 30
 MAX_CONTENT_CHARS = 10000
 MAX_TOTAL_CHARS = 60000
 # Groq retired llama-3.3-70b-versatile on 2026-08-16. These are the current production models.
-DEFAULT_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+DEFAULT_MODELS = "openai/gpt-oss-120b"
 REASONING_EFFORT = os.getenv("GROQ_REASONING_EFFORT", "low").strip().lower()  # low | medium | high | off
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "4000"))  # gpt-oss counts reasoning tokens too
 
