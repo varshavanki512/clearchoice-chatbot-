@@ -2,7 +2,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -21,19 +21,28 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024  # reject oversized request bodies
-# Render (and most hosts) sit behind a proxy; trust one hop so rate limiting sees real client IPs.
+# Render sits behind a proxy; trust one hop so rate limiting sees real client IPs.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# Optional CORS: only needed when the frontend is served from a different origin.
-_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+# CORS: the frontend lives on GitHub Pages (a different origin), so this is REQUIRED.
+# Set ALLOWED_ORIGINS on Render, e.g.  https://yourname.github.io  (origin only: no path, no trailing slash)
+_origins = [o.strip().rstrip("/") for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 if _origins:
-    CORS(app, resources={r"/api/*": {"origins": _origins}}, methods=["POST", "OPTIONS"])
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": _origins}},
+        methods=["POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
+        max_age=86400,
+    )
+else:
+    app.logger.warning("ALLOWED_ORIGINS is not set: browsers on other origins (e.g. GitHub Pages) will be blocked by CORS")
 
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["300 per hour"],
-    storage_uri="memory://",
+    storage_uri=os.getenv("RATELIMIT_STORAGE_URI", "memory://"),  # set to a Redis URL for multi-worker setups
 )
 CHAT_RATE_LIMIT = os.getenv("CHAT_RATE_LIMIT", "20 per minute;300 per day")
 
@@ -86,10 +95,11 @@ def get_client():
     return _client
 
 
+# ---------- Utility routes (API-only backend: no HTML is served from here) ----------
 @app.get("/")
 @limiter.exempt
 def home():
-    return render_template("index.html", api_url=os.getenv("API_BASE_URL", "").rstrip("/"))
+    return jsonify({"service": "clearchoice-api", "status": "ok"})
 
 
 @app.get("/health")
@@ -176,11 +186,10 @@ def chat():
         return fail("The AI service could not complete that request. Please try again.", 502, exc)
 
 
+# ---------- Error handlers (always JSON) ----------
 @app.errorhandler(404)
 def not_found(_e):
-    if request.path.startswith("/api/"):
-        return jsonify({"error": "Not found."}), 404
-    return "Not found", 404
+    return jsonify({"error": "Not found."}), 404
 
 
 @app.errorhandler(405)
@@ -205,6 +214,7 @@ def server_error(_e):
 
 @app.after_request
 def security_headers(resp):
+    # API-only responses: no HTML, so no CSP needed here (the frontend sets its own via <meta>).
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "DENY")
     resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -213,15 +223,6 @@ def security_headers(resp):
         resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     if request.path.startswith("/api/"):
         resp.headers["Cache-Control"] = "no-store"
-    else:
-        connect = "'self'" + (" " + os.getenv("API_BASE_URL", "").rstrip("/") if os.getenv("API_BASE_URL") else "")
-        resp.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'self'; script-src 'self'; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; "
-            f"connect-src {connect}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
-        )
     return resp
 
 
