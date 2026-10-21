@@ -2,12 +2,11 @@
   const $ = (id) => document.getElementById(id);
   const state = { messages: [], busy: false, saved: [] };
   const STORAGE_KEY = 'clearchoice_explicitly_saved_chats_v1';
- const BACKEND_URL =
-  'https://clearchoice-chatbot.onrender.com/api/chat';
+  const BACKEND_URL = 'https://clearchoice-chatbot.onrender.com/api/chat';
 
-  const welcome = $('welcome'), conversation = $('conversation'), messagesEl =$('messages');
-  const input = $('messageInput'), form = $('chatForm'), sendBtn =$('sendBtn');
-  const typing = $('typing'), saveBtn = $('saveChatBtn'), saveDialog =$('saveDialog');
+  const welcome = $('welcome'), conversation = $('conversation'), messagesEl = $('messages');
+  const input = $('messageInput'), form = $('chatForm'), sendBtn = $('sendBtn');
+  const typing = $('typing'), saveBtn = $('saveChatBtn'), saveDialog = $('saveDialog');
   let toastTimer;
 
   function toast(message) {
@@ -16,7 +15,13 @@
   }
 
   function escapeHTML(value) {
-    return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(value).replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
   }
 
   // Small Markdown renderer for model replies; HTML is escaped before formatting.
@@ -62,18 +67,35 @@
     const value = text.trim(); if (!value || state.busy) return;
     state.messages.push({role:'user', content:value}); renderAll(); input.value = ''; resizeInput(); setBusy(true);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => { controller.abort(); }, 30000);
+
       const response = await fetch(BACKEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: state.messages })
+        body: JSON.stringify({ messages: state.messages }),
+        signal: controller.signal
       });
-      const data = await response.json().catch(() => ({}));
+
+      clearTimeout(timeout);
+      
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('Server returned an invalid response');
+      }
+
       if (!response.ok) throw new Error(data.error || 'Unable to contact the AI service.');
       state.messages.push({role:'assistant', content:data.reply || 'I could not create a reply. Please try again.'});
     } catch (error) {
       state.messages.push({role:'assistant', content:'**I could not get a reply.**\n\n' + (error.message || 'Please check that the server is running and the API key is configured.')});
       toast('Message could not be sent.');
-    } finally { setBusy(false); renderAll(); input.focus(); }
+    } finally { 
+      setBusy(false); 
+      renderAll(); 
+      input.focus(); 
+    }
   }
 
   function resizeInput() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; }
@@ -127,10 +149,23 @@
     if (event.submitter && event.submitter.value === 'cancel') return;
     event.preventDefault();
     const title = $('chatTitle').value.trim(); if (!title) return;
-    const existing = state.saved.findIndex(c => c.title === title);
-    const record = {id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()), title, savedAt:new Date().toISOString(), messages:state.messages.map(m=>({role:m.role,content:m.content}))};
-    if (existing >= 0) state.saved[existing] = record; else state.saved.push(record);
-    writeSaved(); saveDialog.close(); toast('Saved on this device only.');
+    const existingIndex = state.saved.findIndex(c => c.title === title);
+    
+    const record = {
+      id: existingIndex >= 0 ? state.saved[existingIndex].id : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      title: title,
+      messages: state.messages
+    };
+
+    if (existingIndex >= 0) {
+      state.saved[existingIndex] = record;
+    } else {
+      state.saved.push(record);
+    }
+    
+    writeSaved(); 
+    saveDialog.close(); 
+    toast('Saved on this device only.');
   });
 
   $('newChatBtn').addEventListener('click', startNewChat);$('forgetBtn').addEventListener('click', () => {
