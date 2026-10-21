@@ -26,9 +26,9 @@ def get_client():
     if not api_key:
         return None
     return OpenAI(
-    api_key=api_key,
-    base_url="https://api.groq.com/openai/v1"
-)
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1"
+    )
 
 
 @app.get("/")
@@ -38,7 +38,7 @@ def home():
 
 @app.get("/health")
 def health():
-   return jsonify({"ok": True, "api_key_configured": bool(os.getenv("GROQ_API_KEY", "").strip())})
+    return jsonify({"ok": True, "api_key_configured": bool(os.getenv("GROQ_API_KEY", "").strip())})
 
 @app.post("/api/chat")
 def chat():
@@ -66,7 +66,8 @@ def chat():
     if client is None:
         return jsonify({"error": "The AI backend is not configured yet. Add GROQ_API_KEY to your private .env file, then restart the Python server."}), 503
 
-    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip() or "openai/gpt-oss-120b"
+    # Use a valid Groq model as the default
+    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
     try:
         response = client.chat.completions.create(
             model=model,
@@ -77,7 +78,6 @@ def chat():
         answer = response.choices[0].message.content or "I couldn't form a response just now. Please try again."
         return jsonify({"reply": answer, "model": model})
     except Exception as exc:
-        # Avoid returning provider details, credentials, or raw exception text to the browser.
         app.logger.exception("AI request failed")
         return jsonify({"error": "The AI service could not complete that request. Check your API key, model access, and account billing, then try again."}), 502
 
