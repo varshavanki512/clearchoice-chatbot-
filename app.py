@@ -52,10 +52,7 @@ MAX_MESSAGES = 30
 MAX_CONTENT_CHARS = 10000
 MAX_TOTAL_CHARS = 60000
 # Groq retired llama-3.3-70b-versatile on 2026-08-16. These are the current production models.
-DEFAULT_MODELS =  [
-    "llama-3.3-70b-versatile",
-    "deepseek-r1-distill-llama-70b"
-]
+DEFAULT_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
 REASONING_EFFORT = os.getenv("GROQ_REASONING_EFFORT", "low").strip().lower()  # low | medium | high | off
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "4000"))  # gpt-oss counts reasoning tokens too
 
@@ -147,21 +144,31 @@ def _create(client, model, messages, with_reasoning):
     return client.chat.completions.create(**kwargs)
 
 
+def _model_is_gone(exc):
+    """True when Groq says the model was retired / decommissioned / does not exist."""
+    code = getattr(exc, "code", None)
+    text = str(exc).lower()
+    return code in ("model_not_found", "model_decommissioned") or "decommissioned" in text or "does not exist" in text
+
+
 def generate_reply(client, messages):
-    """Try each model in order; move on if a model is retired / not accessible."""
+    """Try each model in order; move on if a model is retired, decommissioned or not accessible."""
     last_exc = None
     for model in get_models():
         use_reasoning = model.startswith("openai/gpt-oss") and REASONING_EFFORT in ("low", "medium", "high")
         try:
             try:
                 response = _create(client, model, messages, use_reasoning)
-            except BadRequestError:
-                if not use_reasoning:
+            except BadRequestError as exc:
+                if _model_is_gone(exc) or not use_reasoning:
                     raise
                 app.logger.warning("Model %s rejected reasoning_effort; retrying without it", model)
                 response = _create(client, model, messages, False)
+            app.logger.info("Reply generated with model %s", model)
             return (response.choices[0].message.content or "").strip()
-        except (NotFoundError, PermissionDeniedError) as exc:
+        except (NotFoundError, PermissionDeniedError, BadRequestError) as exc:
+            if isinstance(exc, BadRequestError) and not _model_is_gone(exc):
+                raise
             app.logger.error("Model %s is unavailable (%s); trying next model", model, type(exc).__name__)
             last_exc = exc
     raise last_exc
@@ -220,6 +227,12 @@ def chat():
     except (NotFoundError, PermissionDeniedError) as exc:
         app.logger.error("No configured model is available: %s", exc)
         return fail("The assistant is temporarily unavailable. Please try again later.", 503, exc)
+    except BadRequestError as exc:
+        if _model_is_gone(exc):
+            app.logger.error("No configured model is available: %s", exc)
+            return fail("The assistant is temporarily unavailable. Please try again later.", 503, exc)
+        app.logger.exception("Upstream rejected the request")
+        return fail("The AI service could not complete that request. Please try again.", 502, exc)
     except AuthenticationError as exc:
         app.logger.error("Upstream authentication failed: check GROQ_API_KEY")
         return fail("The assistant is temporarily unavailable. Please try again later.", 502, exc)
