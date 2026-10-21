@@ -2,7 +2,7 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'clearchoice_explicitly_saved_chats_v1';
-  const API_URL = (document.body.dataset.apiUrl || '') + '/api/chat';
+  const API_URL = (document.body.dataset.apiUrl || '').replace(/\/+$/, '') + '/api/chat';
   const REQUEST_TIMEOUT_MS = 90000; // allows for free-tier cold starts
   const MAX_SAVED = 50;
   const state = { messages: [], busy: false, saved: [] };
@@ -81,6 +81,12 @@
     }
     return out.join('');
   }
+
+  // ---------- Download report button (declared BEFORE renderAll uses it) ----------
+  const reportButton = document.createElement('button');
+  reportButton.type = 'button'; reportButton.className = 'text-button hidden'; reportButton.textContent = 'Download report';
+  reportButton.style.margin = '0 0 12px 40px'; reportButton.style.alignSelf = 'flex-start';
+  conversation.insertBefore(reportButton, messagesEl);
 
   // ---------- Rendering ----------
   function renderMessage(m, isLast) {
@@ -230,10 +236,6 @@
   });
 
   // ---------- Download report ----------
-  const reportButton = document.createElement('button');
-  reportButton.type = 'button'; reportButton.className = 'text-button hidden'; reportButton.textContent = 'Download report';
-  reportButton.style.margin = '0 0 12px 40px'; reportButton.style.alignSelf = 'flex-start';
-  conversation.insertBefore(reportButton, messagesEl);
   reportButton.addEventListener('click', () => {
     const text = ['ClearChoice — Decision report', 'Created: ' + new Date().toLocaleString(), 'Generated from the current in-memory session.', '',
       ...persistable().map(m => (m.role === 'user' ? 'YOU' : 'CLEARCHOICE') + '\n' + m.content + '\n')].join('\n');
