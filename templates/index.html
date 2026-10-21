@@ -4,34 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f8fc">
+  <meta name="description" content="ClearChoice AI helps you think through big decisions, compare options, and choose a next step.">
   <title>ClearChoice AI — Think clearly. Choose confidently.</title>
-  <link rel="stylesheet" href="./static/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%B3%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body data-api-url="{{ api_url }}">
+  <noscript><p style="padding:16px">ClearChoice needs JavaScript to run. Please enable it and reload.</p></noscript>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <a class="brand" href="/" aria-label="ClearChoice home">
         <span class="brand-mark">✳</span><span><strong>ClearChoice</strong><small>PRIVATE DECISION AI</small></span>
       </a>
-      <button class="new-chat" id="newChatBtn"><span>＋</span> New conversation</button>
+      <button type="button" class="new-chat" id="newChatBtn"><span>＋</span> New conversation</button>
       <div class="side-label">YOUR SPACE</div>
-      <button class="side-link active" id="currentChatLink"><span>◌</span> Current session</button>
-      <button class="side-link" id="savedToggle"><span>♡</span> Saved chats <span class="count" id="savedCount">0</span></button>
+      <button type="button" class="side-link active" id="currentChatLink"><span>◌</span> Current session</button>
+      <button type="button" class="side-link" id="savedToggle" aria-expanded="false" aria-controls="savedPanel"><span>♡</span> Saved chats <span class="count" id="savedCount">0</span></button>
       <section class="saved-panel hidden" id="savedPanel">
-        <div class="saved-panel-top"><strong>Saved on this device</strong><button class="text-button danger-text" id="deleteAllSaved">Delete all</button></div>
+        <div class="saved-panel-top"><strong>Saved on this device</strong><button type="button" class="text-button danger-text" id="deleteAllSaved">Delete all</button></div>
         <div id="savedList" class="saved-list"><p class="muted small">No saved chats yet.</p></div>
       </section>
       <div class="sidebar-bottom">
-        <div class="privacy-card"><span class="privacy-icon">♧</span><div><strong>Private by default</strong><p>Chats aren't saved unless you choose to save them.</p></div></div>
-        <button class="side-link forget-link" id="forgetBtn"><span>⌫</span> Forget this session</button>
+        <div class="privacy-card"><span class="privacy-icon">♧</span><div><strong>Private by default</strong><p>ClearChoice doesn't store your chats. They're only kept on this device if you choose to save them.</p></div></div>
+        <button type="button" class="side-link forget-link" id="forgetBtn"><span>⌫</span> Forget this session</button>
       </div>
     </aside>
 
     <main class="main-area">
       <header class="topbar">
-        <button class="mobile-menu" id="mobileMenu" aria-label="Toggle menu">☰</button>
+        <button type="button" class="mobile-menu" id="mobileMenu" aria-label="Toggle menu">☰</button>
         <div class="online-label"><span class="online-dot"></span> Decision assistant <span class="beta-pill">AI</span></div>
-        <button class="save-button" id="saveChatBtn" disabled>♡ <span>Save this chat</span></button>
+        <button type="button" class="save-button" id="saveChatBtn" disabled>♡ <span>Save this chat</span></button>
       </header>
 
       <section class="chat-layout">
@@ -41,10 +44,10 @@
           <h1>Big decision?<br><span>Let's untangle it.</span></h1>
           <p class="welcome-copy">Tell me what's on your mind. We'll work through your goals, explore different paths, and find a next step that makes sense for you.</p>
           <div class="prompt-grid">
-            <button class="prompt-card" data-prompt="I'm balancing placement preparation, learning AI, and building a project. I have four hours a day. Help me decide how to prioritize."><span class="prompt-icon blue">◷</span><strong>Balance competing priorities</strong><small>Make a realistic plan with limited time</small><span class="prompt-arrow">↗</span></button>
-            <button class="prompt-card" data-prompt="I have an important decision to make, but I'm not sure what my options are. Help me clarify the problem and explore possible paths."><span class="prompt-icon violet">◇</span><strong>Explore my options</strong><small>Find paths I haven't considered</small><span class="prompt-arrow">↗</span></button>
-            <button class="prompt-card" data-prompt="I need to choose between a safe, predictable path and a riskier path with more potential growth. Help me think it through."><span class="prompt-icon amber">⌁</span><strong>Weigh risk vs. growth</strong><small>Understand the trade-offs</small><span class="prompt-arrow">↗</span></button>
-            <button class="prompt-card" data-prompt="I feel overwhelmed by a decision and don't know where to start. Ask me a few questions to help me get clarity."><span class="prompt-icon green">✧</span><strong>Get unstuck</strong><small>Start with what matters most</small><span class="prompt-arrow">↗</span></button>
+            <button type="button" class="prompt-card" data-prompt="I'm balancing placement preparation, learning AI, and building a project. I have four hours a day. Help me decide how to prioritize."><span class="prompt-icon blue">◷</span><strong>Balance competing priorities</strong><small>Make a realistic plan with limited time</small><span class="prompt-arrow">↗</span></button>
+            <button type="button" class="prompt-card" data-prompt="I have an important decision to make, but I'm not sure what my options are. Help me clarify the problem and explore possible paths."><span class="prompt-icon violet">◇</span><strong>Explore my options</strong><small>Find paths I haven't considered</small><span class="prompt-arrow">↗</span></button>
+            <button type="button" class="prompt-card" data-prompt="I need to choose between a safe, predictable path and a riskier path with more potential growth. Help me think it through."><span class="prompt-icon amber">⌁</span><strong>Weigh risk vs. growth</strong><small>Understand the trade-offs</small><span class="prompt-arrow">↗</span></button>
+            <button type="button" class="prompt-card" data-prompt="I feel overwhelmed by a decision and don't know where to start. Ask me a few questions to help me get clarity."><span class="prompt-icon green">✧</span><strong>Get unstuck</strong><small>Start with what matters most</small><span class="prompt-arrow">↗</span></button>
           </div>
         </div>
 
@@ -59,7 +62,7 @@
             <textarea id="messageInput" rows="1" maxlength="10000" placeholder="Describe what's on your mind…" aria-label="Your message" required></textarea>
             <div class="composer-footer"><div class="composer-hint"><span>↵</span> Enter to send · Shift + Enter for a new line</div><button class="send-button" id="sendBtn" type="submit" aria-label="Send message">↑</button></div>
           </form>
-          <div class="composer-note"><span>♧</span> Temporary by default. Your message is sent to the configured AI provider to generate a reply.</div>
+          <div class="composer-note"><span>♧</span> Temporary by default. Your messages are sent to an AI provider to generate replies.</div>
         </div>
       </section>
       <footer class="footer"><span>ClearChoice AI</span><span>Helpful guidance, not certainty. You make the final call.</span></footer>
@@ -71,7 +74,7 @@
       <div class="dialog-icon">♡</div><h2>Save this conversation?</h2>
       <p>It will be stored in this browser on this device only. It won't be saved to a ClearChoice account or synced to other devices.</p>
       <label for="chatTitle">Give it a name</label><input id="chatTitle" maxlength="80" placeholder="e.g. My placement plan" required>
-      <div class="dialog-actions"><button class="secondary-button" value="cancel">Cancel</button><button class="primary-button" id="confirmSave" value="save">Save chat</button></div>
+      <div class="dialog-actions"><button type="submit" class="secondary-button" value="cancel" formnovalidate>Cancel</button><button type="submit" class="primary-button" id="confirmSave" value="save">Save chat</button></div>
     </form>
   </dialog>
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
